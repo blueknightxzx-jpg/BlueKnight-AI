@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueKnight AI</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .settings-page { padding: 24px 32px; overflow-y: auto; height: 100%; }
+        .settings-header h2 { margin: 0 0 20px 0; font-size: 20px; color: #e6edf3; }
+        .settings-section { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #30363d; }
+        .settings-section h3 { margin: 0 0 14px 0; font-size: 14px; text-transform: uppercase; color: #8b949e; letter-spacing: 0.5px; }
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .setting-row label { color: #c9d1d9; font-size: 13px; }
+        .setting-row input[type="number"], .setting-row select { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 6px; font-size: 13px; min-width: 120px; }
+        .setting-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f81f7; cursor: pointer; }
+        .about-version { color: #2f81f7; font-weight: 600; font-size: 15px; }
+        .about-desc { color: #8b949e; font-size: 13px; margin-top: 6px; line-height: 1.5; }
+        .editor-container { display: flex; height: 100%; width: 100%; background: #0d1117; }
+        .editor-gutter { background: #161b22; border-right: 1px solid #30363d; padding: 12px 8px 12px 12px; text-align: right; user-select: none; overflow: hidden; min-width: 40px; }
+        .line-numbers { color: #484f58; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; line-height: 1.6; white-space: pre; }
+        .editor-area { flex: 1; position: relative; overflow: hidden; }
+        .code-editor { width: 100%; height: 100%; background: #0d1117; color: #c9d1d9; border: none; outline: none; resize: none; padding: 12px 16px; font-family: 'SF Mono', Monaco, monospace; font-size: 14px; line-height: 1.6; tab-size: 2; white-space: pre; overflow: auto; }
+        .code-editor:focus { outline: none; }
+        .file-view { height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Onboarding Overlay -->
+        <div class="onboarding-overlay hidden" id="onboarding-overlay">
+            <div class="onboarding-backdrop"></div>
+            <div class="onboarding-container">
+                <div class="onboarding-slides" id="onboarding-slides">
+                    <div class="onboarding-slide active" data-slide="0">
+                        <div class="onboarding-icon">&#9670;</div>
+                        <h2>Welcome to BlueKnight AI</h2>
+                        <p>Your AI-powered development environment for creating websites and games with natural language.</p>
+                    </div>
+                    <div class="onboarding-slide" data-slide="1">
+                        <div class="onboarding-icon">&#128187;</div>
+                        <h2>What You Can Build</h2>
+                        <p>Create responsive websites, web apps, dashboards, and 2D or 3D games. BlueKnight handles the code while you focus on the vision.</p>
+                    </div>
+                    <div class="onboarding-slide" data-slide="2">
+                        <div class="onboarding-icon">&#129302;</div>
+                        <h2>Talk to Your AI Assistant</h2>
+                        <p>Describe what you want in plain English. The AI understands your intent and generates code, suggests improvements, and helps debug.</p>
+                    </div>
+                    <div class="onboarding-slide" data-slide="3">
+                        <div class="onboarding-icon">&#9881;</div>
+                        <h2>Your Workspace</h2>
+                        <p>Use the file explorer to manage projects. Open multiple files in tabs. Resize and arrange panels to suit your workflow.</p>
+                    </div>
+                    <div class="onboarding-slide" data-slide="4">
+                        <div class="onboarding-icon">&#128260;</div>
+                        <h2>Recover Your Workspace</h2>
+                        <p>Closed tabs and hidden panels can always be restored from the docking system at the bottom of the screen. Nothing is lost.</p>
+                    </div>
+                    <div class="onboarding-slide" data-slide="5">
+                        <div class="onboarding-icon">&#127937;</div>
+                        <h2>Ready to Start</h2>
+                        <p>Be specific with your requests. Break complex tasks into steps. Review generated code and ask the AI to refine it.</p>
+                    </div>
+                </div>
+                <div class="onboarding-nav">
+                    <button class="btn btn-text" id="btn-skip-onboarding">Skip</button>
+                    <div class="onboarding-dots" id="onboarding-dots">
+                        <span class="dot active" data-slide="0"></span>
+                        <span class="dot" data-slide="1"></span>
+                        <span class="dot" data-slide="2"></span>
+                        <span class="dot" data-slide="3"></span>
+                        <span class="dot" data-slide="4"></span>
+                        <span class="dot" data-slide="5"></span>
+                    </div>
+                    <button class="btn btn-primary" id="btn-next-onboarding">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">&#9670;</span>
+                    <span>BlueKnight AI</span>
+                </div>
+                <nav class="header-nav">
+                    <span class="nav-item active" data-view="workspace">Workspace</span>
+                    <span class="nav-item" data-view="settings">Settings</span>
+                </nav>
+            </div>
+            <div class="header-center">
+                <div class="location-bar">
+                    <span class="loc-item">BlueKnight</span>
+                    <span class="loc-sep">/</span>
+                    <span class="loc-item" id="loc-project">Project</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-status" id="header-status">Initializing...</div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <div class="app-body">
+            <!-- Left Panel: Explorer -->
+            <aside class="panel panel-left" id="panel-left">
+                <div class="panel-header">
+                    <span class="panel-title">Explorer</span>
+                    <div class="panel-actions">
+                        <button class="icon-btn" title="New File" id="btn-new-file">+</button>
+                        <button class="icon-btn" title="Collapse" id="btn-collapse-left">&#9664;</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="section-toggle">&#9660;</span>
+                            <span>Project</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="project-card" id="project-card">
+                                <div class="project-name" id="project-name">My Website</div>
+                                <div class="project-meta" id="project-meta">website &middot; 0 files</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="section-toggle">&#9660;</span>
+                            <span>Files</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="file-tree" id="file-tree"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Left Resizer -->
+            <div class="resizer resizer-h" id="resizer-left" data-target="panel-left" data-min="180" data-max="400"></div>
+
+            <!-- Center Panel: Workspace -->
+            <main class="panel panel-center" id="panel-center">
+                <div class="panel-header tab-bar-container" id="tab-bar-container">
+                    <div class="tab-bar" id="tab-bar"></div>
+                    <div class="tab-actions">
+                        <button class="icon-btn" title="Split Editor">&#9974;</button>
+                    </div>
+                </div>
+                <div class="panel-content workspace-content" id="workspace-content">
+                    <!-- Launcher View -->
+                    <div id="view-launcher" class="view-container">
+                        <div class="launcher-screen">
+                            <div class="launcher-logo">&#9670;</div>
+                            <h1>BlueKnight AI</h1>
+                            <p class="launcher-subtitle">Create websites and games with the power of AI</p>
+                            <div class="launcher-actions">
+                                <div class="launcher-card" data-action="new-website">
+                                    <div class="launcher-card-icon">&#128187;</div>
+                                    <div class="launcher-card-label">New Website</div>
+                                    <div class="launcher-card-desc">Build a responsive web project</div>
+                                </div>
+                                <div class="launcher-card" data-action="new-game">
+                                    <div class="launcher-card-icon">&#127918;</div>
+                                    <div class="launcher-card-label">New Game</div>
+                                    <div class="launcher-card-desc">Create a 2D or 3D game</div>
+                                </div>
+                                <div class="launcher-card" data-action="open-project">
+                                    <div class="launcher-card-icon">&#128194;</div>
+                                    <div class="launcher-card-label">Open Project</div>
+                                    <div class="launcher-card-desc">Load an existing project</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workspace View -->
+                    <div id="view-workspace" class="view-container hidden">
+                        <div id="workspace-welcome" class="welcome-screen">
+                            <div class="welcome-logo">&#9670;</div>
+                            <h1>BlueKnight AI</h1>
+                            <p class="welcome-subtitle">AI-Powered Development Environment</p>
+                            <div class="welcome-actions">
+                                <div class="action-card" data-action="new-website">
+                                    <div class="action-icon">&#128187;</div>
+                                    <div class="action-label">New Website</div>
+                                    <div class="action-desc">Create a responsive web project</div>
+                                </div>
+                                <div class="action-card" data-action="new-game">
+                                    <div class="action-icon">&#127918;</div>
+                                    <div class="action-label">New Game</div>
+                                    <div class="action-desc">Build a 2D or 3D game</div>
+                                </div>
+                                <div class="action-card" data-action="open-project">
+                                    <div class="action-icon">&#128194;</div>
+                                    <div class="action-label">Open Project</div>
+                                    <div class="action-desc">Load an existing project</div>
+                                </div>
+                            </div>
+                            <div class="welcome-hint">
+                                Use the AI Assistant panel to describe what you want to build.
+                            </div>
+                        </div>
+                        <div id="workspace-file" class="file-view hidden">
+                            <div class="editor-container" id="editor-container">
+                                <div class="editor-gutter">
+                                    <div class="line-numbers" id="line-numbers">1</div>
+                                </div>
+                                <div class="editor-area">
+                                    <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings View -->
+                    <div id="view-settings" class="view-container hidden">
+                        <div class="settings-page" id="settings-page">
+                            <div class="settings-header">
+                                <h2>Settings</h2>
+                            </div>
+                            <div class="settings-body">
+                                <div class="settings-section">
+                                    <h3>Appearance</h3>
+                                    <div class="setting-row">
+                                        <label>Theme</label>
+                                        <select id="setting-theme">
+                                            <option value="dark" selected>Dark</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>UI Scale</label>
+                                        <select id="setting-ui-scale">
+                                            <option value="small">Small</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="large">Large</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>Animations</label>
+                                        <input type="checkbox" id="setting-animations" checked>
+                                    </div>
+                                </div>
+                                <div class="settings-section">
+                                    <h3>Editor</h3>
+                                    <div class="setting-row">
+                                        <label>Font Size (px)</label>
+                                        <input type="number" id="setting-font-size" min="10" max="24" value="14">
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>Tab Size (spaces)</label>
+                                        <input type="number" id="setting-tab-size" min="2" max="8" value="2">
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>Word Wrap</label>
+                                        <input type="checkbox" id="setting-word-wrap" checked>
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>Auto Save</label>
+                                        <input type="checkbox" id="setting-auto-save">
+                                    </div>
+                                </div>
+                                <div class="settings-section">
+                                    <h3>Workspace</h3>
+                                    <div class="setting-row">
+                                        <label>Restore Previous Workspace</label>
+                                        <input type="checkbox" id="setting-restore-workspace" checked>
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>Confirm Before Closing Tabs</label>
+                                        <input type="checkbox" id="setting-confirm-close" checked>
+                                    </div>
+                                </div>
+                                <div class="settings-section">
+                                    <h3>About</h3>
+                                    <div class="about-version">BlueKnight AI v0.5.0</div>
+                                    <div class="about-desc">An AI-powered development environment for creating websites and games with natural language assistance.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Resizer -->
+            <div class="resizer resizer-h" id="resizer-right" data-target="panel-right" data-min="260" data-max="500"></div>
+
+            <!-- Right Panel: AI Assistant -->
+            <aside class="panel panel-right" id="panel-right" style="width:340px">
+                <div class="panel-header">
+                    <span class="panel-title">AI Assistant</span>
+                    <div class="panel-actions">
+                        <button class="icon-btn" title="Clear" id="btn-clear-chat">&#128465;</button>
+                        <button class="icon-btn" title="Collapse" id="btn-collapse-right">&#9654;</button>
+                    </div>
+                </div>
+                <div class="panel-content chat-content">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message ai-message">
+                            <div class="message-avatar">AI</div>
+                            <div class="message-bubble">
+                                <div class="message-text">Welcome to BlueKnight AI. I can help you build websites and games. What would you like to create?</div>
+                                <div class="message-time">Now</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <textarea class="chat-input" id="chat-input" placeholder="Describe what you want to build..." rows="2"></textarea>
+                            <button class="chat-send-btn" id="chat-send-btn" title="Send">&#10148;</button>
+                        </div>
+                        <div class="chat-hint">Press Enter to send, Shift+Enter for new line</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Dock Bar -->
+        <div class="dock-bar hidden" id="dock-bar">
+            <div class="dock-section" id="dock-tabs">
+                <span class="dock-label">Closed Tabs</span>
+                <div class="dock-items" id="dock-tab-items"></div>
+            </div>
+            <div class="dock-divider"></div>
+            <div class="dock-section" id="dock-panels">
+                <span class="dock-label">Panels</span>
+                <div class="dock-items" id="dock-panel-items">
+                    <button class="dock-item" data-dock="left" id="dock-restore-left">Explorer</button>
+                    <button class="dock-item" data-dock="right" id="dock-restore-right">AI Assistant</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-left">
+                <span class="footer-item" id="status-branch">main</span>
+                <span class="footer-item" id="status-file">No file selected</span>
+            </div>
+            <div class="footer-center">
+                <span class="footer-item" id="status-message">Ready</span>
+            </div>
+            <div class="footer-right">
+                <span class="footer-item" id="status-cursor">Ln 1, Col 1</span>
+                <span class="footer-item" id="status-encoding">UTF-8</span>
+                <span class="footer-item" id="status-lang">Plain Text</span>
+            </div>
+        </footer>
+
+        <!-- Legacy New Project Modal -->
+        <div class="modal-overlay hidden" id="modal-new-project">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Create New Project</h3>
+                    <button class="modal-close" id="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="project-name-input" placeholder="My Project">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="project-type" value="website" checked> Website
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="project-type" value="game"> Game
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="project-desc-input" rows="2" placeholder="Optional description"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="btn-cancel-project">Cancel</button>
+                    <button class="btn btn-primary" id="btn-create-project">Create Project</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Website Wizard Modal -->
+        <div class="modal-overlay hidden" id="modal-website-wizard">
+            <div class="modal modal-wide">
+                <div class="modal-header">
+                    <h3>New Website</h3>
+                    <button class="modal-close" id="btn-close-website-wizard">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="wizard-steps">
+                        <div class="wizard-step active" data-wstep="0">
+                            <div class="form-group">
+                                <label>Website Name <span class="required">*</span></label>
+                                <input type="text" id="website-name-input" placeholder="My Awesome Website">
+                            </div>
+                            <div class="form-group">
+                                <label>Purpose <span class="required">*</span></label>
+                                <select id="website-purpose-input">
+                                    <option value="">Select a purpose...</option>
+                                    <option value="portfolio">Portfolio / Personal Site</option>
+                                    <option value="business">Business / Corporate</option>
+                                    <option value="landing">Landing Page</option>
+                                    <option value="ecommerce">E-Commerce / Store</option>
+                                    <option value="blog">Blog / Content</option>
+                                    <option value="dashboard">Dashboard / Admin</option>
+                                    <option value="social">Social / Community</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="wizard-step" data-wstep="1">
+                            <div class="form-group">
+                                <label>Description <span class="optional">(optional)</span></label>
+                                <textarea id="website-desc-input" rows="3" placeholder="Describe your website, target audience, key features..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Style / Theme Preferences <span class="optional">(optional)</span></label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label"><input type="checkbox" value="dark"> Dark Mode</label>
+                                    <label class="checkbox-label"><input type="checkbox" value="minimal"> Minimal</label>
+                                    <label class="checkbox-label"><input type="checkbox" value="modern"> Modern</label>
+                                    <label class="checkbox-label"><input type="checkbox" value="colorful"> Colorful</label>
+                                    <label class="checkbox-label"><input type="checkbox" value="professional"> Professional</label>
+                                    <label class="checkbox-label"><input type="checkbox" value="playful"> Playful</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="btn-cancel-website">Cancel</button>
+                    <button class="btn btn-text hidden" id="btn-website-back">Back</button>
+                    <button class="btn btn-primary" id="btn-website-next">Next</button>
+                    <button class="btn btn-primary hidden" id="btn-website-create">Start Building</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Wizard Modal -->
+        <div class="modal-overlay hidden" id="modal-game-wizard">
+            <div class="modal modal-wide">
+                <div class="modal-header">
+                    <h3>New Game</h3>
+                    <button class="modal-close" id="btn-close-game-wizard">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="wizard-steps">
+                        <div class="wizard-step active" data-wstep="0">
+                            <div class="form-group">
+                                <label>Game Name <span class="required">*</span></label>
+                                <input type="text" id="game-name-input" placeholder="My Awesome Game">
+                            </div>
+                            <div class="form-group">
+                                <label>Dimension <span class="required">*</span></label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="game-dimension" value="2d" checked> 2D
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="game-dimension" value="3d"> 3D
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Genre <span class="required">*</span></label>
+                                <select id="game-genre-input">
+                                    <option value="">Select a genre...</option>
+                                    <option value="platformer">Platformer</option>
+                                    <option value="rpg">RPG</option>
+                                    <option value="shooter">Shooter</option>
+                                    <option value="puzzle">Puzzle</option>
+                                    <option value="strategy">Strategy</option>
+                                    <option value="racing">Racing</option>
+                                    <option value="simulation">Simulation</option>
+                                    <option value="adventure">Adventure</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="wizard-step" data-wstep="1">
+                            <div class="form-group">
+                                <label>Description <span class="optional">(optional)</span></label>
+                                <textarea id="game-desc-input" rows="3" placeholder="Describe your game concept, mechanics, art style..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Game Engine <span class="optional">(optional)</span></label>
+                                <select id="game-engine-input">
+                                    <option value="">No engine (vanilla HTML/JS)</option>
+                                    <option value="godot">Godot</option>
+                                    <option value="unity">Unity</option>
+                                    <option value="unreal">Unreal Engine</option>
+                                </select>
+                                <div class="field-hint" id="engine-hint">Select an engine to generate engine-specific project files.</div>
+                            </div>
+                            <div class="form-group hidden" id="engine-folder-group">
+                                <label>Engine Project Folder <span class="optional">(optional)</span></label>
+                                <input type="text" id="game-engine-folder" placeholder="/path/to/engine/project" readonly>
+                                <button class="btn btn-secondary btn-small" id="btn-select-folder">Select Folder</button>
+                                <div class="field-hint">Choose your engine project folder to sync structure.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="btn-cancel-game">Cancel</button>
+                    <button class="btn btn-text hidden" id="btn-game-back">Back</button>
+                    <button class="btn btn-primary" id="btn-game-next">Next</button>
+                    <button class="btn btn-primary hidden" id="btn-game-create">Start Building</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/events.js"></script>
+    <script src="js/modules.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/project.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/core.js"></script>
+</body>
+</html>
