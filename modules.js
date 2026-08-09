@@ -17,14 +17,7 @@
         console.log('[BK Modules] Registered: ' + name);
     };
 
-    // Placeholder modules — real modules load from their own files
-    BK.registerModule('editor', {
-        name: 'editor',
-        init: function() {
-            console.log('[BK Editor] Initialized');
-        }
-    });
-
+    // Placeholder module — real module loads from its own file
     BK.registerModule('preview', {
         name: 'preview',
         init: function() {

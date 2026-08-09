@@ -32,6 +32,23 @@
             cursor: 'Ln 1, Col 1',
             encoding: 'UTF-8',
             lang: 'Plain Text'
+        },
+        settings: {
+            appearance: {
+                theme: 'dark',
+                uiScale: '100%',
+                animations: true
+            },
+            editor: {
+                fontSize: 14,
+                tabSize: 2,
+                wordWrap: true,
+                autoSave: false
+            },
+            workspace: {
+                restoreWorkspace: true,
+                confirmCloseTab: true
+            }
         }
     };
 
@@ -66,9 +83,33 @@
         name: 'state',
 
         init: function() {
+            var saved = null;
+            try { saved = localStorage.getItem('bk_settings'); } catch (e) {}
+            if (saved) {
+                try {
+                    var parsed = JSON.parse(saved);
+                    if (parsed) data.settings = parsed;
+                } catch (e) {}
+            }
             console.log('[BK State] Initialized');
             if (BK.events) {
                 BK.events.emit('state:ready', { data: this.get() });
+            }
+        },
+
+        saveSettings: function() {
+            try {
+                localStorage.setItem('bk_settings', JSON.stringify(data.settings));
+            } catch (e) {
+                console.warn('[BK State] Could not save settings:', e);
+            }
+        },
+
+        saveFileContents: function() {
+            try {
+                localStorage.setItem('bk_file_contents', JSON.stringify(data.editor.fileContents || {}));
+            } catch (e) {
+                console.warn('[BK State] Could not save file contents:', e);
             }
         },
 
